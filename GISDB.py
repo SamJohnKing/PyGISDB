@@ -40,7 +40,7 @@ class RWLock(object):
 class GISItem:
 	def __init__(self):
 		self.DicOpenLength = 128
-		self.Type = None  # Point, Line, Polygon, PNG
+		self.Type = None  # Point, Line, Polygon
 		self.Hint = ""  # Hint的任一Key不能是其他Key的前缀
 		self.XY = None
 		self.Dic = None
@@ -131,6 +131,8 @@ class GISDB:
 		self.LogBoxListener = []
 		self.PixBoxListener = []
 		self.name = "GISDB"
+		self.PNGDic = dict()
+		self.DefaultBufferImageNumber = 188
 		self.default_rgb = (0, 0, 255)
 		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1080, 960)
 		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (540, 480)
@@ -238,11 +240,23 @@ class GISDB:
 				if (item.Y0 > self.LogicalUp) or (item.Y0 > self.ScreenItem.LOGICAL_DEFAULT_P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1]): continue
 				if item.Type == "Point" and item.HintGet("PointVisible") == "":
 					DrawCount += 1
+
+					PNGPath = item.HintGet("PNG")
+					if not PNGPath is None:
+						if self.PNGDic.__contains__(PNGPath): PNGImage = self.PNGDic.get(PNGPath)
+						else:
+							if not os.path.exists(PNGPath): PNGImage = pygame.image.load("layers.png")
+							else: PNGImage = pygame.image.load(PNGPath)
+							if len(self.PNGDic) > self.DefaultBufferImageNumber: self.PNGDic.clear()
+							self.PNGDic[PNGPath] = PNGImage
+						self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
+
 					PointSize = item.HintGet("PointSize")
 					self.ScreenItem.DrawLogicalPoint(item.XY, self.TranslateRGB(item.HintGet("PointRGB")), 4 if PointSize is None else int(PointSize))
 					if item.HintGet("WordVisible") == "":
 						text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
-						self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY))
+						text_pos = self.ScreenItem.Log2Pix(item.XY)
+						self.ScreenItem.screen.blit(text, (text_pos[0] + 2, text_pos[1] - 20))
 				elif item.Type == "Line" and item.HintGet("LineVisible") == "":
 					DrawCount += 1
 					LineWidth = item.HintGet("LineWidth")
@@ -308,6 +322,6 @@ if __name__ == "__main__":
 	DB = GISDB()
 	# DB.test()
 	DB.start()
-	DB.Insert("Point", (100, 50), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8]")
+	DB.Insert("Point", (100, 50), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:plane.jpg][WordVisible:]")
 	DB.Insert("Line", [(-177, -33), (-12, 12), (88, 88)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
