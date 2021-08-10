@@ -293,6 +293,5 @@ if __name__ == "__main__":
 	DB = GISDB()
 	DB.start()
 	DB.Insert("Point", (100, 50), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000]")
-	DB.Insert("Line", [(-177, -33), (-12, 12), (88, 88)], "[LineRGB:0x654321][Title:Geo][WordRGB:]")
+	DB.Insert("Line", [(-177, -33), (-12, 12), (88, 88)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00]")
-	print(DB.GISData[2].X0, DB.GISData[2].X1, DB.GISData[2].Y0, DB.GISData[2].Y1)
