@@ -134,7 +134,7 @@ class GISDB:
 		self.PNGDic = dict()
 		self.DefaultBufferImageNumber = 188
 		self.default_rgb = (0, 0, 255)
-		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1024, 768)
+		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1080, 960)
 		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (640, 480)
 		self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
 		pygame.display.set_caption("GISDB Python Version")
@@ -184,7 +184,24 @@ class GISDB:
 		self.DataLock.read_release()
 
 	def KeyListener(self, KeyChar):
-		print(self.name + " : " + KeyChar)
+		if KeyChar == "left":
+			self.ScreenItem.Info = self.ScreenItem.Info[ : -len(KeyChar)]
+			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
+			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]/10, P0[1])
+		elif KeyChar == "right":
+			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
+			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0] / 10, P0[1])
+		elif KeyChar == "up":
+			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
+			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
+		elif KeyChar == "down":
+			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
+			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
+		else:
+			print(self.name + " : " + KeyChar)
 
 	def CMLListener(self, CML):
 		print(self.name + " : " + CML)
@@ -370,12 +387,12 @@ if __name__ == "__main__":
 	import platform
 	opsys = str(platform.platform())
 
-	if opsys == "Windows-8.1-6.3.9600-SP0": 
+	if opsys == "Windows-8.1-6.3.9600-SP0" or opsys == "Windows-10-10.0.14393-SP0":
 		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	elif opsys == "Windows-7-6.1.7601-SP1":
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	print(opsys)
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
-	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.012)
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.015)
 
 
