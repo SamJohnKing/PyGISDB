@@ -214,7 +214,7 @@ class GISDB:
 
 	def run(self):
 		while True:
-			time.sleep(0.02)
+			time.sleep(0.25)
 			self.draw()
 
 	def start(self):
@@ -249,6 +249,7 @@ class GISDB:
 	def draw(self):
 		self.ClearListener()
 		self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown, self.default_rgb)
+		# 上句画出逻辑数据的合法矩形边界线条
 		self.DataLock.read_acquire()
 		try:
 			DrawCount = 0
@@ -314,6 +315,8 @@ class GISDB:
 			print(traceback.format_exc())
 			os._exit(0)
 		self.DataLock.read_release()
+		#FlushScreen
+		pygame.display.update(pygame.Rect(0, 20, self.ScreenItem.SCREEN_DEFAULT_SIZE[0], self.ScreenItem.SCREEN_DEFAULT_SIZE[1] - 40))
 
 	def test(self):
 		def ClickOnButton1(x, y, button):
@@ -329,10 +332,10 @@ class GISDB:
 			(self.LogicalLeft, self.LogicalLeft + 32, self.LogicalDown + 32, self.LogicalDown, ClickOnButton2))
 
 		while self.ScreenItem.running:
-			time.sleep(0.2)
+			time.sleep(0.02)
 			self.ClearListener()
+			# 下句画出逻辑点的合法矩形边界线条
 			self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown, self.default_rgb)
-			t0 = time.time()
 
 			for i in range(10):
 				rect_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
@@ -363,7 +366,7 @@ if __name__ == "__main__":
 	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
 	DB.Insert("Line", [(121.2431, 31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
-	DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
-	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.2431, 31.4362)
-	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.08, 0.045)
+	DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.012)
 

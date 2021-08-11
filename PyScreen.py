@@ -72,16 +72,15 @@ class PyScreen(threading.Thread):
 			time.sleep(0.05)
 			if time.time() - FlushTime > 8:
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
+				pygame.display.flip()
 				FlushTime = time.time()
-			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR,
-			                 pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
+			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.Info, 1, (255, 0, 0))
 			self.screen.blit(text, (4, self.SCREEN_DEFAULT_SIZE[1] - 20))
-			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR,
-			                 pygame.Rect((0, 0), (self.SCREEN_DEFAULT_SIZE[0], 20)))
+			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, 0), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.Message, 1, (0, 255, 0))
-			self.screen.blit(text, (4, 4))
-			pygame.display.update()
+			self.screen.blit(text, (4, 0))
+			pygame.display.update([pygame.Rect(0 ,0, self.SCREEN_DEFAULT_SIZE[0], 20), pygame.Rect(0, self.SCREEN_DEFAULT_SIZE[1] - 20, self.SCREEN_DEFAULT_SIZE[0], 20)])
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					os._exit(0)
