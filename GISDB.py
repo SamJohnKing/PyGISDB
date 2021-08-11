@@ -240,6 +240,7 @@ class GISDB:
 				if (image.find(".png") == -1):
 					continue;
 				DB.Insert("Point", (0, 0), "[PNG:" + image + "]")
+				print(image)
 
 	# 遍历所有的文件夹
 	# for d in dirs:
@@ -362,4 +363,7 @@ if __name__ == "__main__":
 	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
 	DB.Insert("Line", [(121.2431, 31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
-	DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\Shanghai_45km_MainCity_1mPerPixel_2kPics")
+	DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.2431, 31.4362)
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.08, 0.045)
+
