@@ -185,21 +185,29 @@ class GISDB:
 
 	def KeyListener(self, KeyChar):
 		if KeyChar == "left":
+			self.ClearListener()
 			self.ScreenItem.Info = self.ScreenItem.Info[ : -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]/10, P0[1])
+			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "right":
+			self.ClearListener()
 			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0] / 10, P0[1])
+			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "up":
+			self.ClearListener()
 			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
+			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "down":
+			self.ClearListener()
 			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
+			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		else:
 			print(self.name + " : " + KeyChar)
 
@@ -394,5 +402,6 @@ if __name__ == "__main__":
 	print(opsys)
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
 	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.015)
+	DB.ScreenItem.GlobalFlushSpan = -1
 
 

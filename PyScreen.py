@@ -23,6 +23,7 @@ class PyScreen(threading.Thread):
 		self.KeyListener = []
 		self.ClickListener = []
 		self.ClearListener = []
+		self.GlobalFlushSpan = 8 # 大于0代表全局刷新秒数，否则不刷新
 		super().__init__()
 
 	def Log2Pix(self, Log):
@@ -70,7 +71,7 @@ class PyScreen(threading.Thread):
 		FlushTime = time.time()
 		while self.running:
 			time.sleep(0.05)
-			if time.time() - FlushTime > 8:
+			if (self.GlobalFlushSpan > 0) and (time.time() - FlushTime > self.GlobalFlushSpan):
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 				pygame.display.flip()
 				FlushTime = time.time()
@@ -89,10 +90,14 @@ class PyScreen(threading.Thread):
 					print("Key Pressed " + KeyChar)
 					if KeyChar == "return":
 						print("CML >>> " + self.Info)
-						if self.Info == "resetscreen": self.LOGICAL_DEFAULT_SIZE = self.SCREEN_DEFAULT_SIZE; self.LOGICAL_DEFAULT_P0 = (
-						0, 0)
-						for Listener in self.CMLListener:
-							Listener(self.Info)
+						if self.Info == "resetscreen":
+							self.LOGICAL_DEFAULT_SIZE = self.SCREEN_DEFAULT_SIZE;
+							self.LOGICAL_DEFAULT_P0 = (0, 0)
+						elif self.Info.startswith("globalflushspan="):
+							self.GlobalFlushSpan = float(self.Info[16 : ])
+						else:
+							for Listener in self.CMLListener:
+								Listener(self.Info)
 						self.Info = ""
 					elif KeyChar == "backspace":
 						self.Info = self.Info[:-1]
@@ -121,8 +126,7 @@ class PyScreen(threading.Thread):
 						Log_cursor = self.Pix2Log(self.MouseDownPos)
 						newx = Log_cursor[0] - (Log_cursor[0] - self.LOGICAL_DEFAULT_P0[0]) * 0.9
 						newy = Log_cursor[1] - (Log_cursor[1] - self.LOGICAL_DEFAULT_P0[1]) * 0.9
-						self.LOGICAL_DEFAULT_SIZE = (
-						self.LOGICAL_DEFAULT_SIZE[0] * 0.9, self.LOGICAL_DEFAULT_SIZE[1] * 0.9)
+						self.LOGICAL_DEFAULT_SIZE = (self.LOGICAL_DEFAULT_SIZE[0] * 0.9, self.LOGICAL_DEFAULT_SIZE[1] * 0.9)
 						self.LOGICAL_DEFAULT_P0 = (newx, newy)
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 					elif event.button == 5:  # Wheel Down
