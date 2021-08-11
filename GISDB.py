@@ -99,7 +99,7 @@ class GISItem:
 		if key is None: return None
 		if key == "": return ""
 		if len(self.Hint) > self.DicOpenLength:
-			return self.Dic[key]
+			return self.Dic.get(key)
 		else:
 			pos = self.Hint.find(key)
 			if pos == -1: return None
@@ -134,8 +134,8 @@ class GISDB:
 		self.PNGDic = dict()
 		self.DefaultBufferImageNumber = 188
 		self.default_rgb = (0, 0, 255)
-		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1080, 960)
-		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (540, 480)
+		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1024, 768)
+		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (640, 480)
 		self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
 		self.ScreenItem.start()
 		while not self.ScreenItem.running: time.sleep(1)
@@ -226,6 +226,25 @@ class GISDB:
 		if RgbValue == "": return 128, 128, 128
 		return int(RgbValue[2:4], 16), int(RgbValue[4:6], 16), int(RgbValue[6:8], 16)
 
+	def InputAlignedMapDir(self, filedir):
+		for (root, dirs, files) in os.walk(filedir):
+			# root 表示当前正在访问的文件夹路径
+			# dirs 表示该文件夹下的子目录名list
+			# files 表示该文件夹下的文件list
+
+			# 遍历文件
+			for f in files:
+				image = os.path.join(root, f)
+				if (image.find("AlignedMap_") == -1):
+					continue;
+				if (image.find(".png") == -1):
+					continue;
+				DB.Insert("Point", (0, 0), "[PNG:" + image + "]")
+
+	# 遍历所有的文件夹
+	# for d in dirs:
+	#	 print(os.path.join(root, d))
+
 	def draw(self):
 		self.ClearListener()
 		self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown, self.default_rgb)
@@ -234,23 +253,41 @@ class GISDB:
 			DrawCount = 0
 			for item in self.GISData:
 				if DrawCount > self.MaxDrawNum: break
-				if (item.X1 < self.LogicalLeft) or (item.X1 < self.ScreenItem.LOGICAL_DEFAULT_P0[0]): continue
-				if (item.X0 > self.LogicalRight) or (item.X0 > self.ScreenItem.LOGICAL_DEFAULT_P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]): continue
-				if (item.Y1 < self.LogicalDown) or (item.Y1 < self.ScreenItem.LOGICAL_DEFAULT_P0[1]): continue
-				if (item.Y0 > self.LogicalUp) or (item.Y0 > self.ScreenItem.LOGICAL_DEFAULT_P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1]): continue
-				if item.Type == "Point" and item.HintGet("PointVisible") == "":
-					DrawCount += 1
-
-					PNGPath = item.HintGet("PNG")
+				PNGPath = item.HintGet("PNG")
+				AlignedPos = -1 if PNGPath is None else PNGPath.find("AlignedMap_")
+				if AlignedPos == -1:
+					if (item.X1 < self.LogicalLeft) or (item.X1 < self.ScreenItem.LOGICAL_DEFAULT_P0[0]): continue
+					if (item.X0 > self.LogicalRight) or (item.X0 > self.ScreenItem.LOGICAL_DEFAULT_P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]): continue
+					if (item.Y1 < self.LogicalDown) or (item.Y1 < self.ScreenItem.LOGICAL_DEFAULT_P0[1]): continue
+					if (item.Y0 > self.LogicalUp) or (item.Y0 > self.ScreenItem.LOGICAL_DEFAULT_P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1]): continue
+				if item.Type == "Point" and (item.HintGet("PointVisible") == "" or AlignedPos != -1):
 					if not PNGPath is None:
+						RelocScreenXY = None
+						if AlignedPos != -1:
+							LocList = PNGPath[ AlignedPos : ].split("_")
+							PixelLeftDown = self.ScreenItem.Log2Pix((float(LocList[1]), float(LocList[2])))
+							if PixelLeftDown[0] > self.ScreenItem.SCREEN_DEFAULT_SIZE[0]: continue
+							if PixelLeftDown[1] < 0: continue
+							PixelRightUp = self.ScreenItem.Log2Pix((float(LocList[3]), float(LocList[4])))
+							if PixelRightUp[0] < 0: continue
+							if PixelRightUp[1] > self.ScreenItem.SCREEN_DEFAULT_SIZE[1]: continue
+							RePNGSize = (int(PixelRightUp[0] - PixelLeftDown[0]), int(PixelLeftDown[1] - PixelRightUp[1]))
+							Ratio = (RePNGSize[0] + RePNGSize[1]) / (self.ScreenItem.SCREEN_DEFAULT_SIZE[0] + self.ScreenItem.SCREEN_DEFAULT_SIZE[1])
+							if (Ratio < 0.33) or (Ratio > 3): continue
+							RelocScreenXY = (PixelLeftDown[0], PixelRightUp[1])
+
 						if self.PNGDic.__contains__(PNGPath): PNGImage = self.PNGDic.get(PNGPath)
 						else:
 							if not os.path.exists(PNGPath): PNGImage = pygame.image.load("layers.png")
 							else: PNGImage = pygame.image.load(PNGPath)
 							if len(self.PNGDic) > self.DefaultBufferImageNumber: self.PNGDic.clear()
 							self.PNGDic[PNGPath] = PNGImage
-						self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
+						DrawCount += 1
+						if RelocScreenXY is None: self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
+						else: self.ScreenItem.screen.blit(pygame.transform.scale(PNGImage, RePNGSize), RelocScreenXY)
+						if AlignedPos != -1: continue
 
+					DrawCount += 1
 					PointSize = item.HintGet("PointSize")
 					self.ScreenItem.DrawLogicalPoint(item.XY, self.TranslateRGB(item.HintGet("PointRGB")), 4 if PointSize is None else int(PointSize))
 					if item.HintGet("WordVisible") == "":
@@ -322,6 +359,7 @@ if __name__ == "__main__":
 	DB = GISDB()
 	# DB.test()
 	DB.start()
-	DB.Insert("Point", (100, 50), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:plane.jpg][WordVisible:]")
-	DB.Insert("Line", [(-177, -33), (-12, 12), (88, 88)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
+	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
+	DB.Insert("Line", [(121.2431, 31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
+	DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\Shanghai_45km_MainCity_1mPerPixel_2kPics")
