@@ -369,10 +369,12 @@ if __name__ == "__main__":
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
 	import platform
 	opsys = str(platform.platform())
+
 	if opsys == "Windows-8.1-6.3.9600-SP0": 
 		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
-	else:
+	elif opsys == "Windows-7-6.1.7601-SP1":
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+	print(opsys)
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
 	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.012)
 
