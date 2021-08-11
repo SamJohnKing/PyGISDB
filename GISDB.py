@@ -137,6 +137,7 @@ class GISDB:
 		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1024, 768)
 		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (640, 480)
 		self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
+		pygame.display.set_caption("GISDB Python Version")
 		self.ScreenItem.start()
 		while not self.ScreenItem.running: time.sleep(1)
 
@@ -366,7 +367,13 @@ if __name__ == "__main__":
 	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
 	DB.Insert("Line", [(121.2431, 31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
-	DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+	import platform
+	opsys = str(platform.platform())
+	if opsys == "Windows-8.1-6.3.9600-SP0": 
+		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+	else:
+		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
 	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.012)
+
 
