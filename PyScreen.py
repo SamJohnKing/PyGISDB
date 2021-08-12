@@ -62,6 +62,9 @@ class PyScreen(threading.Thread):
 		return int(size[0] / self.LOGICAL_DEFAULT_SIZE[0] * self.SCREEN_DEFAULT_SIZE[0]), int(
 			size[1] / self.LOGICAL_DEFAULT_SIZE[1] * self.SCREEN_DEFAULT_SIZE[1])
 
+	def LogicalMoveCenter(self, CenterPoint):
+		self.LOGICAL_DEFAULT_P0 = (CenterPoint[0] - self.LOGICAL_DEFAULT_SIZE[0]/2, CenterPoint[1] - self.LOGICAL_DEFAULT_SIZE[1]/2)
+
 	def run(self):
 		pygame.init()
 		self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, 0, 32)

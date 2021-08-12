@@ -401,7 +401,22 @@ if __name__ == "__main__":
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	print(opsys)
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
-	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.02, 0.015)
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.012, 0.009)
 	DB.ScreenItem.GlobalFlushSpan = -1
+	scan_st = (121.2616, 31.13878)
+	scan_en = (121.66912, 31.385)
+	x_stride = 0.002
+	y_stride = 0.0015
+	x_ptr = scan_st[0]
+	y_ptr = scan_st[1]
+	while y_ptr < scan_en[1]:
+		while x_ptr < scan_en[0]:
+			DB.ScreenItem.LogicalMoveCenter((x_ptr, y_ptr))
+			print((x_ptr, y_ptr))
+			time.sleep(2)
+			x_ptr += x_stride
+		y_ptr += y_stride
+
+
 
 
