@@ -24,6 +24,7 @@ class PyScreen(threading.Thread):
 		self.ClickListener = []
 		self.ClearListener = []
 		self.GlobalFlushSpan = 8 # 大于0代表全局刷新秒数，否则不刷新
+		self.FlushTime = time.time()
 		super().__init__()
 
 	def Log2Pix(self, Log):
@@ -71,13 +72,13 @@ class PyScreen(threading.Thread):
 		self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 		self.font = pygame.font.Font(pygame.font.match_font('kaiti'), 18)
 		self.running = True
-		FlushTime = time.time()
+		self.FlushTime = time.time()
 		while self.running:
 			time.sleep(0.05)
-			if (self.GlobalFlushSpan > 0) and (time.time() - FlushTime > self.GlobalFlushSpan):
+			if (self.GlobalFlushSpan > 0) and (time.time() - self.FlushTime > self.GlobalFlushSpan):
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 				pygame.display.flip()
-				FlushTime = time.time()
+				self.FlushTime = time.time()
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.Info, 1, (255, 0, 0))
 			self.screen.blit(text, (4, self.SCREEN_DEFAULT_SIZE[1] - 20))
@@ -102,6 +103,9 @@ class PyScreen(threading.Thread):
 							for Listener in self.CMLListener:
 								Listener(self.Info)
 						self.Info = ""
+						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
+						pygame.display.flip()
+						self.FlushTime = time.time()
 					elif KeyChar == "backspace":
 						self.Info = self.Info[:-1]
 					else:
