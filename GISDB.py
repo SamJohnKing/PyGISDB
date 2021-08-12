@@ -407,16 +407,16 @@ if __name__ == "__main__":
 	scan_en = (121.66912, 31.385)
 	x_stride = 0.002
 	y_stride = 0.0015
-	x_ptr = scan_st[0]
 	y_ptr = scan_st[1]
 	while y_ptr < scan_en[1]:
+		x_ptr = scan_st[0]
 		while x_ptr < scan_en[0]:
 			DB.ScreenItem.LogicalMoveCenter((x_ptr, y_ptr))
 			print((x_ptr, y_ptr))
 			time.sleep(2)
 			x_ptr += x_stride
 		y_ptr += y_stride
-
+	print("ScanFinished")
 
 
 
