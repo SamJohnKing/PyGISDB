@@ -281,62 +281,67 @@ class GISDB:
 			DrawCount = 0
 			for item in self.GISData:
 				if DrawCount > self.MaxDrawNum: break
-				PNGPath = item.HintGet("PNG")
-				AlignedPos = -1 if PNGPath is None else PNGPath.find("AlignedMap_")
-				if AlignedPos == -1:
+
+				if item.Type == "Point":
+					PNGPath = item.HintGet("PNG")
+					AlignedPos = -1 if PNGPath is None else PNGPath.find("AlignedMap_")
+					if AlignedPos == -1:
+						if (item.X1 < self.LogicalLeft) or (item.X1 < self.ScreenItem.LOGICAL_DEFAULT_P0[0]): continue
+						if (item.X0 > self.LogicalRight) or (item.X0 > self.ScreenItem.LOGICAL_DEFAULT_P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]): continue
+						if (item.Y1 < self.LogicalDown) or (item.Y1 < self.ScreenItem.LOGICAL_DEFAULT_P0[1]): continue
+						if (item.Y0 > self.LogicalUp) or (item.Y0 > self.ScreenItem.LOGICAL_DEFAULT_P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1]): continue
+					if item.HintGet("PointVisible") == "" or AlignedPos != -1:
+						if not PNGPath is None:
+							RelocScreenXY = None
+							if AlignedPos != -1:
+								LocList = PNGPath[ AlignedPos : ].split("_")
+								PixelLeftDown = self.ScreenItem.Log2Pix((float(LocList[1]), float(LocList[2])))
+								if PixelLeftDown[0] > self.ScreenItem.SCREEN_DEFAULT_SIZE[0]: continue
+								if PixelLeftDown[1] < 0: continue
+								PixelRightUp = self.ScreenItem.Log2Pix((float(LocList[3]), float(LocList[4])))
+								if PixelRightUp[0] < 0: continue
+								if PixelRightUp[1] > self.ScreenItem.SCREEN_DEFAULT_SIZE[1]: continue
+								RePNGSize = (int(PixelRightUp[0] - PixelLeftDown[0]), int(PixelLeftDown[1] - PixelRightUp[1]))
+								Ratio = (RePNGSize[0] + RePNGSize[1]) / (self.ScreenItem.SCREEN_DEFAULT_SIZE[0] + self.ScreenItem.SCREEN_DEFAULT_SIZE[1])
+								if (Ratio < 0.33) or (Ratio > 3): continue
+								RelocScreenXY = (PixelLeftDown[0], PixelRightUp[1])
+
+							if self.PNGDic.__contains__(PNGPath): PNGImage = self.PNGDic.get(PNGPath)
+							else:
+								if not os.path.exists(PNGPath): PNGImage = pygame.image.load("layers.png")
+								else: PNGImage = pygame.image.load(PNGPath)
+								if len(self.PNGDic) > self.DefaultBufferImageNumber: self.PNGDic.clear()
+								self.PNGDic[PNGPath] = PNGImage
+							DrawCount += 1
+							if RelocScreenXY is None: self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
+							else: self.ScreenItem.screen.blit(pygame.transform.scale(PNGImage, RePNGSize), RelocScreenXY)
+							if AlignedPos != -1: continue
+
+						DrawCount += 1
+						PointSize = item.HintGet("PointSize")
+						self.ScreenItem.DrawLogicalPoint(item.XY, self.TranslateRGB(item.HintGet("PointRGB")), 4 if PointSize is None else int(PointSize))
+						if item.HintGet("WordVisible") == "":
+							text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
+							text_pos = self.ScreenItem.Log2Pix(item.XY)
+							self.ScreenItem.screen.blit(text, (text_pos[0] + 2, text_pos[1] - 20))
+				else:
 					if (item.X1 < self.LogicalLeft) or (item.X1 < self.ScreenItem.LOGICAL_DEFAULT_P0[0]): continue
 					if (item.X0 > self.LogicalRight) or (item.X0 > self.ScreenItem.LOGICAL_DEFAULT_P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]): continue
 					if (item.Y1 < self.LogicalDown) or (item.Y1 < self.ScreenItem.LOGICAL_DEFAULT_P0[1]): continue
 					if (item.Y0 > self.LogicalUp) or (item.Y0 > self.ScreenItem.LOGICAL_DEFAULT_P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1]): continue
-				if item.Type == "Point" and (item.HintGet("PointVisible") == "" or AlignedPos != -1):
-					if not PNGPath is None:
-						RelocScreenXY = None
-						if AlignedPos != -1:
-							LocList = PNGPath[ AlignedPos : ].split("_")
-							PixelLeftDown = self.ScreenItem.Log2Pix((float(LocList[1]), float(LocList[2])))
-							if PixelLeftDown[0] > self.ScreenItem.SCREEN_DEFAULT_SIZE[0]: continue
-							if PixelLeftDown[1] < 0: continue
-							PixelRightUp = self.ScreenItem.Log2Pix((float(LocList[3]), float(LocList[4])))
-							if PixelRightUp[0] < 0: continue
-							if PixelRightUp[1] > self.ScreenItem.SCREEN_DEFAULT_SIZE[1]: continue
-							RePNGSize = (int(PixelRightUp[0] - PixelLeftDown[0]), int(PixelLeftDown[1] - PixelRightUp[1]))
-							Ratio = (RePNGSize[0] + RePNGSize[1]) / (self.ScreenItem.SCREEN_DEFAULT_SIZE[0] + self.ScreenItem.SCREEN_DEFAULT_SIZE[1])
-							if (Ratio < 0.33) or (Ratio > 3): continue
-							RelocScreenXY = (PixelLeftDown[0], PixelRightUp[1])
-
-						if self.PNGDic.__contains__(PNGPath): PNGImage = self.PNGDic.get(PNGPath)
-						else:
-							if not os.path.exists(PNGPath): PNGImage = pygame.image.load("layers.png")
-							else: PNGImage = pygame.image.load(PNGPath)
-							if len(self.PNGDic) > self.DefaultBufferImageNumber: self.PNGDic.clear()
-							self.PNGDic[PNGPath] = PNGImage
+					if item.Type == "Line" and item.HintGet("LineVisible") == "":
 						DrawCount += 1
-						if RelocScreenXY is None: self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
-						else: self.ScreenItem.screen.blit(pygame.transform.scale(PNGImage, RePNGSize), RelocScreenXY)
-						if AlignedPos != -1: continue
-
-					DrawCount += 1
-					PointSize = item.HintGet("PointSize")
-					self.ScreenItem.DrawLogicalPoint(item.XY, self.TranslateRGB(item.HintGet("PointRGB")), 4 if PointSize is None else int(PointSize))
-					if item.HintGet("WordVisible") == "":
-						text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
-						text_pos = self.ScreenItem.Log2Pix(item.XY)
-						self.ScreenItem.screen.blit(text, (text_pos[0] + 2, text_pos[1] - 20))
-				elif item.Type == "Line" and item.HintGet("LineVisible") == "":
-					DrawCount += 1
-					LineWidth = item.HintGet("LineWidth")
-					self.ScreenItem.DrawLogicalLine(item.XY, self.TranslateRGB(item.HintGet("LineRGB")), 2 if LineWidth is None else int(LineWidth))
-					if item.HintGet("WordVisible") == "":
-						text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
-						self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
-				elif item.Type == "Polygon" and item.HintGet("PolygonVisible") == "":
-					DrawCount += 1
-					self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 0)
-					if item.HintGet("WordVisible") == "":
-						text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
-						self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
-				else:
-					pass
+						LineWidth = item.HintGet("LineWidth")
+						self.ScreenItem.DrawLogicalLine(item.XY, self.TranslateRGB(item.HintGet("LineRGB")), 2 if LineWidth is None else int(LineWidth))
+						if item.HintGet("WordVisible") == "":
+							text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
+							self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
+					elif item.Type == "Polygon" and item.HintGet("PolygonVisible") == "":
+						DrawCount += 1
+						self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 0)
+						if item.HintGet("WordVisible") == "":
+							text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
+							self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
 		except:
 			print(traceback.format_exc())
 			os._exit(0)
@@ -390,12 +395,15 @@ if __name__ == "__main__":
 	# DB.test()
 	DB.start()
 	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
-	DB.Insert("Line", [(121.2431, 31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
+	DB.Insert("Line", [(-121.2431, -31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
 	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
 	import platform
 	opsys = str(platform.platform())
 
-	if opsys == "Windows-8.1-6.3.9600-SP0" or opsys == "Windows-10-10.0.14393-SP0":
+	if opsys == "Windows-10-10.0.14393-SP0":
+		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
+		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_120km_WholeCity_8mPerPixel")
+	elif opsys == "Windows-8.1-6.3.9600-SP0":
 		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	elif opsys == "Windows-7-6.1.7601-SP1":
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
