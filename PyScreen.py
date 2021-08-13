@@ -19,7 +19,7 @@ class PyScreen(threading.Thread):
 		self.LOGICAL_DEFAULT_P0 = (0, 0)  # 屏幕左下角逻辑原点
 		self.running = False
 		self.ScreenInput = u""
-		self.Message = u"等待键盘输入命令行(help, exit, resetscreen)并回车确认刷屏，也可以鼠标拖拽点击缩放！"
+		self.Message = u"等待键盘输入命令行(help, exit, resetscreen)并回车确认刷屏, 按esc与alt可以最小化, 也可以鼠标拖拽点击缩放！"
 		self.StatusDefault = u"待命"
 		self.Status = self.StatusDefault
 		self.MouseDownPos = (0, 0)
@@ -30,6 +30,8 @@ class PyScreen(threading.Thread):
 		self.ClearListener = []
 		self.GlobalFlushSpan = 8 # 大于0代表全局刷新秒数，否则不刷新
 		self.FlushTime = time.time()
+		self.fullscreen = True
+		self.HWACC = 0
 		super().__init__()
 
 	def Log2Pix(self, Log):
@@ -73,7 +75,11 @@ class PyScreen(threading.Thread):
 
 	def run(self):
 		pygame.init()
-		self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, pygame.NOFRAME, 32)
+		if self.fullscreen or self.HWACC != 0:
+			infoObject = pygame.display.Info()
+			self.SCREEN_DEFAULT_SIZE = (infoObject.current_w, infoObject.current_h)
+		if self.HWACC != 0: self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, self.HWACC | pygame.NOFRAME, 32)
+		else: self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, pygame.NOFRAME, 32)
 		self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 		self.font = pygame.font.Font(pygame.font.match_font('kaiti'), 18)
 		self.running = True
@@ -82,7 +88,8 @@ class PyScreen(threading.Thread):
 			time.sleep(0.05)
 			if (self.GlobalFlushSpan > 0) and (time.time() - self.FlushTime > self.GlobalFlushSpan):
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-				pygame.display.update()
+				if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+				else: pygame.display.update()
 				self.FlushTime = time.time()
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.ScreenInput, 1, (255, 0, 0))
@@ -90,7 +97,8 @@ class PyScreen(threading.Thread):
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, 0), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.Status + " | " + self.Message, 1, (0, 255, 0))
 			self.screen.blit(text, (4, 0))
-			pygame.display.update([pygame.Rect(0 ,0, self.SCREEN_DEFAULT_SIZE[0], 20), pygame.Rect(0, self.SCREEN_DEFAULT_SIZE[1] - 20, self.SCREEN_DEFAULT_SIZE[0], 20)])
+			if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			else: pygame.display.update([pygame.Rect(0 ,0, self.SCREEN_DEFAULT_SIZE[0], 20), pygame.Rect(0, self.SCREEN_DEFAULT_SIZE[1] - 20, self.SCREEN_DEFAULT_SIZE[0], 20)])
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					os._exit(0)
@@ -109,10 +117,13 @@ class PyScreen(threading.Thread):
 								Listener(self.ScreenInput)
 						self.ScreenInput = ""
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-						pygame.display.update()
+						if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+						else: pygame.display.update()
 						self.FlushTime = time.time()
 					elif KeyChar == "backspace":
 						self.ScreenInput = self.ScreenInput[:-1]
+					elif KeyChar == "escape" or KeyChar == "left alt" or KeyChar == "right alt":
+						pygame.display.iconify()
 					else:
 						self.ScreenInput += KeyChar
 						for Listener in self.KeyListener:
@@ -255,8 +266,8 @@ if __name__ == "__main__":
 			icon = pygame.transform.scale(pygame.image.load("plane.jpg"), ScreenItem.LogSize2Pixel((32, 32)))  # button2
 			ScreenItem.screen.blit(icon, ScreenItem.Log2Pix((LogicalLeft, LogicalDown + 32)))
 			ScreenItem.DrawLogicalRect(LogicalLeft, LogicalLeft + 32, LogicalDown + 32, LogicalDown)
-
-			pygame.display.update()
+			if ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			else: pygame.display.update()
 
 
 	drawer1 = threading.Thread(target=Drawer, args=(ScreenItem, (255, 0, 0), "RED  ", (100, 420, 420, 100, 8)))

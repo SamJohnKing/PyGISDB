@@ -115,7 +115,7 @@ class GISItem:
 		self.HintFill(Hint)
 
 class GISDB:
-	def __init__(self, width=1024, height=768):
+	def __init__(self, HWACC=0, fullscreen=True, width=1024, height=768):
 		self.GISData = []
 		self.DataLock = RWLock()
 		self.MaxDrawNum = 25000
@@ -139,6 +139,9 @@ class GISDB:
 		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (640, 480)
 		self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
 		pygame.display.set_caption("GISDB Python Version")
+		pygame.display.set_icon(pygame.image.load("globe.png"))
+		self.ScreenItem.fullscreen = fullscreen
+		self.ScreenItem.HWACC = HWACC
 		self.ScreenItem.start()
 		while not self.ScreenItem.running: time.sleep(1)
 
@@ -227,6 +230,7 @@ class GISDB:
 			"=============================\nexit命令退出程序\n"
 			"resetscreen命令屏幕左下角自动对齐到(0,0)原点\n"
 			"resetdbscreen命令将展示西经180度到东经180度，南纬90度到北纬90度的矩形线性空间\n"))
+			LocalFrame.destroy()
 
 	def ClickListener(self, button, PixelPos, LogicalPos):
 		if not PyScreen.CheckInRegion(LogicalPos[0], LogicalPos[1], self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown): return
@@ -348,7 +352,7 @@ class GISDB:
 					elif item.Type == "Polygon" and item.HintGet("PolygonVisible") == "":
 						DrawCount += 1
 						LineWidth = item.HintGet("LineWidth")
-						self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 2 if LineWidth is None else int(LineWidth))
+						self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 4 if LineWidth is None else int(LineWidth))
 						if item.HintGet("WordVisible") == "":
 							text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
 							self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
@@ -357,7 +361,8 @@ class GISDB:
 			os._exit(0)
 		self.DataLock.read_release()
 		#FlushScreen
-		pygame.display.update(pygame.Rect(0, 20, self.ScreenItem.SCREEN_DEFAULT_SIZE[0], self.ScreenItem.SCREEN_DEFAULT_SIZE[1] - 40))
+		if self.ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+		else: pygame.display.update(pygame.Rect(0, 20, self.ScreenItem.SCREEN_DEFAULT_SIZE[0], self.ScreenItem.SCREEN_DEFAULT_SIZE[1] - 40))
 
 	def test(self):
 		def ClickOnButton1(x, y, button):
@@ -396,12 +401,13 @@ class GISDB:
 			icon = pygame.transform.scale(pygame.image.load("plane.jpg"), self.ScreenItem.LogSize2Pixel((32, 32)))  # button2
 			self.ScreenItem.screen.blit(icon, self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalDown + 32)))
 			self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalLeft + 32, self.LogicalDown + 32, self.LogicalDown)
-
-			pygame.display.update()
+			if self.ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			else: pygame.display.update()
 
 
 if __name__ == "__main__":
-	DB = GISDB(width=1080, height=960)
+	DB = GISDB(HWACC=pygame.FULLSCREEN | pygame.HWSURFACE)
+	# DB = GISDB(HWACC=pygame.FULLSCREEN | pygame.HWSURFACE | pygame.OPENGL | pygame.DOUBLEBUF)
 	# DB.test()
 	DB.start()
 	import platform
@@ -417,17 +423,16 @@ if __name__ == "__main__":
 	print(opsys)
 
 	DB.Insert("Point", (121, 31),"[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
-	DB.Insert("Line", [(121.2431, 31.4362), (121.5568, 31.7435)],"[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
+	DB.Insert("Line", [(121.2431, 31.4362), (121.5568, 31.7435)],"[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:3]")
 	DB.Insert("Polygon", [(121.150, 31.43), (121.33, 31.20), (121.55, 31)],"[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:][PolygonRGB:0x00FF00]")
 
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
-	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.012, 0.009)
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.012, 0.008)
 	DB.ScreenItem.GlobalFlushSpan = -1
 	scan_st = (121.2616, 31.13878)
 	scan_en = (121.66912, 31.385)
 	x_stride = 0.002
 	y_stride = 0.0015
-	exit(0)
 	y_ptr = scan_st[1]
 	while y_ptr < scan_en[1]:
 		x_ptr = scan_st[0]
