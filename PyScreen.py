@@ -6,6 +6,9 @@ import sys
 import time
 import threading
 import os
+import tkinter
+from tkinter import messagebox
+import traceback
 
 
 class PyScreen(threading.Thread):
@@ -15,8 +18,10 @@ class PyScreen(threading.Thread):
 		self.LOGICAL_DEFAULT_SIZE = (1024, 768)
 		self.LOGICAL_DEFAULT_P0 = (0, 0)  # 屏幕左下角逻辑原点
 		self.running = False
-		self.Info = u"状态正常"
-		self.Message = u"等待键盘输入命令行(exit, resetscreen)，也可以鼠标拖拽点击"
+		self.ScreenInput = u""
+		self.Message = u"等待键盘输入命令行(help, exit, resetscreen)并回车确认刷屏，也可以鼠标拖拽点击缩放！"
+		self.StatusDefault = u"待命"
+		self.Status = self.StatusDefault
 		self.MouseDownPos = (0, 0)
 		self.MouseUpPos = (0, 0)
 		self.CMLListener = []
@@ -68,7 +73,7 @@ class PyScreen(threading.Thread):
 
 	def run(self):
 		pygame.init()
-		self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, 0, 32)
+		self.screen = pygame.display.set_mode(self.SCREEN_DEFAULT_SIZE, pygame.NOFRAME, 32)
 		self.screen.fill(self.SCREEN_DEFAULT_COLOR)
 		self.font = pygame.font.Font(pygame.font.match_font('kaiti'), 18)
 		self.running = True
@@ -77,13 +82,13 @@ class PyScreen(threading.Thread):
 			time.sleep(0.05)
 			if (self.GlobalFlushSpan > 0) and (time.time() - self.FlushTime > self.GlobalFlushSpan):
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-				pygame.display.flip()
+				pygame.display.update()
 				self.FlushTime = time.time()
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
-			text = self.font.render(self.Info, 1, (255, 0, 0))
+			text = self.font.render(self.ScreenInput, 1, (255, 0, 0))
 			self.screen.blit(text, (4, self.SCREEN_DEFAULT_SIZE[1] - 20))
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, 0), (self.SCREEN_DEFAULT_SIZE[0], 20)))
-			text = self.font.render(self.Message, 1, (0, 255, 0))
+			text = self.font.render(self.Status + " | " + self.Message, 1, (0, 255, 0))
 			self.screen.blit(text, (4, 0))
 			pygame.display.update([pygame.Rect(0 ,0, self.SCREEN_DEFAULT_SIZE[0], 20), pygame.Rect(0, self.SCREEN_DEFAULT_SIZE[1] - 20, self.SCREEN_DEFAULT_SIZE[0], 20)])
 			for event in pygame.event.get():
@@ -93,23 +98,23 @@ class PyScreen(threading.Thread):
 					KeyChar = pygame.key.name(event.key)
 					print("Key Pressed " + KeyChar)
 					if KeyChar == "return":
-						print("CML >>> " + self.Info)
-						if self.Info == "resetscreen":
+						print("CML >>> " + self.ScreenInput)
+						if self.ScreenInput == "resetscreen":
 							self.LOGICAL_DEFAULT_SIZE = self.SCREEN_DEFAULT_SIZE;
 							self.LOGICAL_DEFAULT_P0 = (0, 0)
-						elif self.Info.startswith("globalflushspan="):
-							self.GlobalFlushSpan = float(self.Info[16 : ])
+						elif self.ScreenInput.startswith("globalflushspan="):
+							self.GlobalFlushSpan = float(self.ScreenInput[16 : ])
 						else:
 							for Listener in self.CMLListener:
-								Listener(self.Info)
-						self.Info = ""
+								Listener(self.ScreenInput)
+						self.ScreenInput = ""
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-						pygame.display.flip()
+						pygame.display.update()
 						self.FlushTime = time.time()
 					elif KeyChar == "backspace":
-						self.Info = self.Info[:-1]
+						self.ScreenInput = self.ScreenInput[:-1]
 					else:
-						self.Info += KeyChar
+						self.ScreenInput += KeyChar
 						for Listener in self.KeyListener:
 							Listener(KeyChar)
 				elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -213,12 +218,12 @@ if __name__ == "__main__":
 		ScreenItem.ClearListener.append(ClearListener)
 
 		def ClickOnButton1(x, y, button):
-			ScreenItem.Info = "You Click On Button1 From " + name
+			ScreenItem.ScreenInput = "You Click On Button1 From " + name
 
 		LogBoxListener.append((LogicalLeft, LogicalLeft + 70, LogicalUp, LogicalUp - 16, ClickOnButton1))
 
 		def ClickOnButton2(x, y, button):
-			ScreenItem.Info = "You Click On Button2 From " + name
+			ScreenItem.ScreenInput = "You Click On Button2 From " + name
 
 		LogBoxListener.append((LogicalLeft, LogicalLeft + 32, LogicalDown + 32, LogicalDown, ClickOnButton2))
 

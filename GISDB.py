@@ -8,6 +8,8 @@ import os
 import random
 import threading
 import traceback
+from tkinter import messagebox
+import tkinter
 
 
 class RWLock(object):
@@ -112,9 +114,8 @@ class GISItem:
 		self.SetXY(XY)
 		self.HintFill(Hint)
 
-
 class GISDB:
-	def __init__(self):
+	def __init__(self, width=1024, height=768):
 		self.GISData = []
 		self.DataLock = RWLock()
 		self.MaxDrawNum = 25000
@@ -134,7 +135,7 @@ class GISDB:
 		self.PNGDic = dict()
 		self.DefaultBufferImageNumber = 188
 		self.default_rgb = (0, 0, 255)
-		self.ScreenItem.SCREEN_DEFAULT_SIZE = (1080, 960)
+		self.ScreenItem.SCREEN_DEFAULT_SIZE = (width, height)
 		self.ScreenItem.LOGICAL_DEFAULT_SIZE = (640, 480)
 		self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
 		pygame.display.set_caption("GISDB Python Version")
@@ -186,25 +187,25 @@ class GISDB:
 	def KeyListener(self, KeyChar):
 		if KeyChar == "left":
 			self.ClearListener()
-			self.ScreenItem.Info = self.ScreenItem.Info[ : -len(KeyChar)]
+			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[ : -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]/10, P0[1])
 			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "right":
 			self.ClearListener()
-			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0] / 10, P0[1])
 			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "up":
 			self.ClearListener()
-			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
 			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
 		elif KeyChar == "down":
 			self.ClearListener()
-			self.ScreenItem.Info = self.ScreenItem.Info[: -len(KeyChar)]
+			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
 			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
@@ -218,6 +219,14 @@ class GISDB:
 		elif CML == "resetdbscreen":
 			self.ScreenItem.LOGICAL_DEFAULT_SIZE = (540, 480)
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (-280, -190)
+		elif CML == "help":
+			LocalFrame = tkinter.Tk()
+			LocalFrame.withdraw()
+			messagebox.showinfo(title="帮助与介绍", message=("本程序是Python版本的GISDB，用于存储、计算和展示时空地理数据\n"
+			"键盘输入以下命令将在以红字在底部栏展示，回车确认执行并刷屏\n"
+			"=============================\nexit命令退出程序\n"
+			"resetscreen命令屏幕左下角自动对齐到(0,0)原点\n"
+			"resetdbscreen命令将展示西经180度到东经180度，南纬90度到北纬90度的矩形线性空间\n"))
 
 	def ClickListener(self, button, PixelPos, LogicalPos):
 		if not PyScreen.CheckInRegion(LogicalPos[0], LogicalPos[1], self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown): return
@@ -338,7 +347,8 @@ class GISDB:
 							self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
 					elif item.Type == "Polygon" and item.HintGet("PolygonVisible") == "":
 						DrawCount += 1
-						self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 0)
+						LineWidth = item.HintGet("LineWidth")
+						self.ScreenItem.DrawLogicalPolygon(item.XY, self.TranslateRGB(item.HintGet("PolygonRGB")), 2 if LineWidth is None else int(LineWidth))
 						if item.HintGet("WordVisible") == "":
 							text = self.ScreenItem.font.render(item.Hint, 1, self.TranslateRGB(item.HintGet("WordRGB")))
 							self.ScreenItem.screen.blit(text, self.ScreenItem.Log2Pix(item.XY[0]))
@@ -351,13 +361,13 @@ class GISDB:
 
 	def test(self):
 		def ClickOnButton1(x, y, button):
-			self.ScreenItem.Info = "You Click On Button1 From " + self.name
+			self.ScreenItem.ScreenInput = "You Click On Button1 From " + self.name
 
 		self.LogBoxListener.append(
 			(self.LogicalLeft, self.LogicalLeft + 70, self.LogicalUp, self.LogicalUp - 16, ClickOnButton1))
 
 		def ClickOnButton2(x, y, button):
-			self.ScreenItem.Info = "You Click On Button2 From " + self.name
+			self.ScreenItem.ScreenInput = "You Click On Button2 From " + self.name
 
 		self.LogBoxListener.append(
 			(self.LogicalLeft, self.LogicalLeft + 32, self.LogicalDown + 32, self.LogicalDown, ClickOnButton2))
@@ -391,23 +401,25 @@ class GISDB:
 
 
 if __name__ == "__main__":
-	DB = GISDB()
+	DB = GISDB(width=1080, height=960)
 	# DB.test()
 	DB.start()
-	DB.Insert("Point", (121, 31), "[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
-	DB.Insert("Line", [(-121.2431, -31.4362), (121.2568, 31.4435)], "[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
-	DB.Insert("Polygon", [(-50, 43), (33, 20), (120, 30)], "[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:]")
 	import platform
 	opsys = str(platform.platform())
-
 	if opsys == "Windows-10-10.0.14393-SP0":
-		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_120km_WholeCity_8mPerPixel")
+		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	elif opsys == "Windows-8.1-6.3.9600-SP0":
 		DB.InputAlignedMapDir("C:\\Users\\SamJohnKing\\Desktop\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	elif opsys == "Windows-7-6.1.7601-SP1":
+		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_120km_WholeCity_8mPerPixel")
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	print(opsys)
+
+	DB.Insert("Point", (121, 31),"[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
+	DB.Insert("Line", [(121.2431, 31.4362), (121.5568, 31.7435)],"[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:4]")
+	DB.Insert("Polygon", [(121.150, 31.43), (121.33, 31.20), (121.55, 31)],"[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:][PolygonRGB:0x00FF00]")
+
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
 	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.012, 0.009)
 	DB.ScreenItem.GlobalFlushSpan = -1
@@ -415,6 +427,7 @@ if __name__ == "__main__":
 	scan_en = (121.66912, 31.385)
 	x_stride = 0.002
 	y_stride = 0.0015
+	exit(0)
 	y_ptr = scan_st[1]
 	while y_ptr < scan_en[1]:
 		x_ptr = scan_st[0]
