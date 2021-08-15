@@ -32,6 +32,7 @@ class PyScreen(threading.Thread):
 		self.FlushTime = time.time()
 		self.fullscreen = True
 		self.HWACC = 0
+		self.screenlock = threading.Lock()
 		super().__init__()
 
 	def Log2Pix(self, Log):
@@ -86,19 +87,24 @@ class PyScreen(threading.Thread):
 		self.FlushTime = time.time()
 		while self.running:
 			time.sleep(0.05)
-			if (self.GlobalFlushSpan > 0) and (time.time() - self.FlushTime > self.GlobalFlushSpan):
+			if (self.GlobalFlushSpan > 0) and (time.time() - self.FlushTime > self.GlobalFlushSpan):#周期性更新屏幕
+				self.screenlock.acquire()
 				self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-				if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+				if self.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 				else: pygame.display.update()
 				self.FlushTime = time.time()
+				self.screenlock.release()
+			self.screenlock.acquire()
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, self.SCREEN_DEFAULT_SIZE[1] - 20), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.ScreenInput, 1, (255, 0, 0))
 			self.screen.blit(text, (4, self.SCREEN_DEFAULT_SIZE[1] - 20))
 			pygame.draw.rect(self.screen, self.SCREEN_DEFAULT_COLOR, pygame.Rect((0, 0), (self.SCREEN_DEFAULT_SIZE[0], 20)))
 			text = self.font.render(self.Status + " | " + self.Message, 1, (0, 255, 0))
 			self.screen.blit(text, (4, 0))
-			if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			if self.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 			else: pygame.display.update([pygame.Rect(0 ,0, self.SCREEN_DEFAULT_SIZE[0], 20), pygame.Rect(0, self.SCREEN_DEFAULT_SIZE[1] - 20, self.SCREEN_DEFAULT_SIZE[0], 20)])
+			self.screenlock.release()
+			#上述语句更新上下两条status bar
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
 					os._exit(0)
@@ -116,10 +122,12 @@ class PyScreen(threading.Thread):
 							for Listener in self.CMLListener:
 								Listener(self.ScreenInput)
 						self.ScreenInput = ""
-						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
-						if self.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+						self.screenlock.acquire()
+						self.screen.fill(self.SCREEN_DEFAULT_COLOR) #回车键更新全局屏幕
+						if self.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 						else: pygame.display.update()
 						self.FlushTime = time.time()
+						self.screenlock.release()
 					elif KeyChar == "backspace":
 						self.ScreenInput = self.ScreenInput[:-1]
 					elif KeyChar == "escape" or KeyChar == "left alt" or KeyChar == "right alt":
@@ -135,32 +143,38 @@ class PyScreen(threading.Thread):
 					dx = self.MouseUpPos[0] - self.MouseDownPos[0]
 					dy = self.MouseUpPos[1] - self.MouseDownPos[1]
 					if abs(dx) + abs(dy) > 10:  # Drag
-						for Listener in self.ClearListener:
-							Listener()
+						self.screenlock.acquire()
+						# for Listener in self.ClearListener:
+						# 	Listener()
 						Log_dPos = self.Pix2Log((dx, dy))
 						newx = self.LOGICAL_DEFAULT_P0[0] - (Log_dPos[0] - self.LOGICAL_DEFAULT_P0[0])
 						newy = self.LOGICAL_DEFAULT_P0[1] - (
 									Log_dPos[1] - self.LOGICAL_DEFAULT_P0[1] - self.LOGICAL_DEFAULT_SIZE[1])
 						self.LOGICAL_DEFAULT_P0 = (newx, newy)
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
+						self.screenlock.release()
 					elif event.button == 4:  # Wheel Up
-						for Listener in self.ClearListener:
-							Listener()
+						self.screenlock.acquire()
+						# for Listener in self.ClearListener:
+						# 	Listener()
 						Log_cursor = self.Pix2Log(self.MouseDownPos)
 						newx = Log_cursor[0] - (Log_cursor[0] - self.LOGICAL_DEFAULT_P0[0]) * 0.9
 						newy = Log_cursor[1] - (Log_cursor[1] - self.LOGICAL_DEFAULT_P0[1]) * 0.9
 						self.LOGICAL_DEFAULT_SIZE = (self.LOGICAL_DEFAULT_SIZE[0] * 0.9, self.LOGICAL_DEFAULT_SIZE[1] * 0.9)
 						self.LOGICAL_DEFAULT_P0 = (newx, newy)
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
+						self.screenlock.release()
 					elif event.button == 5:  # Wheel Down
-						for Listener in self.ClearListener:
-							Listener()
+						self.screenlock.acquire()
+						# for Listener in self.ClearListener:
+						# 	Listener()
 						Log_cursor = self.Pix2Log(self.MouseDownPos)
 						newx = Log_cursor[0] - (Log_cursor[0] - self.LOGICAL_DEFAULT_P0[0]) / 0.9
 						newy = Log_cursor[1] - (Log_cursor[1] - self.LOGICAL_DEFAULT_P0[1]) / 0.9
 						self.LOGICAL_DEFAULT_SIZE = (self.LOGICAL_DEFAULT_SIZE[0] / 0.9, self.LOGICAL_DEFAULT_SIZE[1] / 0.9)
 						self.LOGICAL_DEFAULT_P0 = (newx, newy)
 						self.screen.fill(self.SCREEN_DEFAULT_COLOR)
+						self.screenlock.release()
 					else:  # Click
 						print("You Button Pressed At " + str(event.button))
 						print("You Click At Pixel " + str(self.MouseUpPos))
@@ -266,7 +280,7 @@ if __name__ == "__main__":
 			icon = pygame.transform.scale(pygame.image.load("plane.jpg"), ScreenItem.LogSize2Pixel((32, 32)))  # button2
 			ScreenItem.screen.blit(icon, ScreenItem.Log2Pix((LogicalLeft, LogicalDown + 32)))
 			ScreenItem.DrawLogicalRect(LogicalLeft, LogicalLeft + 32, LogicalDown + 32, LogicalDown)
-			if ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			if ScreenItem.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 			else: pygame.display.update()
 
 

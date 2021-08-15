@@ -123,12 +123,13 @@ class GISDB:
 		self.ScreenItem.KeyListener.append(self.KeyListener)
 		self.ScreenItem.CMLListener.append(self.CMLListener)
 		self.ScreenItem.ClickListener.append(self.ClickListener)
-		self.ScreenItem.ClearListener.append(self.ClearListener)
+		self.ScreenItem.ClearListener.append(self.Unsafe_Clear)
 		self.LogicalLeft = -180
 		self.LogicalRight = 180
 		self.LogicalUp = 90
 		self.LogicalDown = -90
-		self.Padding = 8
+		self.LogicalPadding = 8
+		self.PixelPadding = 8
 		self.LogBoxListener = []
 		self.PixBoxListener = []
 		self.name = "GISDB"
@@ -189,29 +190,67 @@ class GISDB:
 
 	def KeyListener(self, KeyChar):
 		if KeyChar == "left":
-			self.ClearListener()
+			self.ScreenItem.screenlock.acquire()
+			self.Unsafe_Clear()
 			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[ : -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[0]/10, P0[1])
-			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+			GISPixel_Left_Up = self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalUp))
+			GISPixel_Right_Down = self.ScreenItem.Log2Pix((self.LogicalRight, self.LogicalDown))
+			GISPixel_Left = GISPixel_Left_Up[0]; GISPixel_Up = GISPixel_Left_Up[1]
+			GISPixel_Right = GISPixel_Right_Down[0]; GISPixel_Down = GISPixel_Right_Down[1]
+			if not (GISPixel_Left < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[0] < GISPixel_Right)\
+				or not (GISPixel_Up < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[1] < GISPixel_Down):
+				self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+				# 一般在逻辑空间Panel内不能跳出Bbox范围去fill覆盖其他区域，即使有文本超出也不能全屏刷屏，但由于GISDB是空间独占的，故破例
+			self.ScreenItem.screenlock.release()
 		elif KeyChar == "right":
-			self.ClearListener()
+			self.ScreenItem.screenlock.acquire()
+			self.Unsafe_Clear()
 			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[0] / 10, P0[1])
-			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+			GISPixel_Left_Up = self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalUp))
+			GISPixel_Right_Down = self.ScreenItem.Log2Pix((self.LogicalRight, self.LogicalDown))
+			GISPixel_Left = GISPixel_Left_Up[0]; GISPixel_Up = GISPixel_Left_Up[1]
+			GISPixel_Right = GISPixel_Right_Down[0]; GISPixel_Down = GISPixel_Right_Down[1]
+			if not (GISPixel_Left < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[0] < GISPixel_Right)\
+				or not (GISPixel_Up < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[1] < GISPixel_Down):
+				self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+				# 一般在逻辑空间Panel内不能跳出Bbox范围去fill覆盖其他区域，即使有文本超出也不能全屏刷屏，但由于GISDB是空间独占的，故破例
+			self.ScreenItem.screenlock.release()
 		elif KeyChar == "up":
-			self.ClearListener()
+			self.ScreenItem.screenlock.acquire()
+			self.Unsafe_Clear()
 			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] + self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
-			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+			GISPixel_Left_Up = self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalUp))
+			GISPixel_Right_Down = self.ScreenItem.Log2Pix((self.LogicalRight, self.LogicalDown))
+			GISPixel_Left = GISPixel_Left_Up[0];
+			GISPixel_Up = GISPixel_Left_Up[1]
+			GISPixel_Right = GISPixel_Right_Down[0];
+			GISPixel_Down = GISPixel_Right_Down[1]
+			if not (GISPixel_Left < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[0] < GISPixel_Right) \
+					or not (GISPixel_Up < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[1] < GISPixel_Down):
+				self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+			# 一般在逻辑空间Panel内不能跳出Bbox范围去fill覆盖其他区域，即使有文本超出也不能全屏刷屏，但由于GISDB是空间独占的，故破例
+			self.ScreenItem.screenlock.release()
 		elif KeyChar == "down":
-			self.ClearListener()
+			self.ScreenItem.screenlock.acquire()
+			self.Unsafe_Clear()
 			self.ScreenItem.ScreenInput = self.ScreenItem.ScreenInput[: -len(KeyChar)]
 			P0 = self.ScreenItem.LOGICAL_DEFAULT_P0
 			self.ScreenItem.LOGICAL_DEFAULT_P0 = (P0[0] , P0[1] - self.ScreenItem.LOGICAL_DEFAULT_SIZE[1] / 10)
-			self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+			GISPixel_Left_Up = self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalUp))
+			GISPixel_Right_Down = self.ScreenItem.Log2Pix((self.LogicalRight, self.LogicalDown))
+			GISPixel_Left = GISPixel_Left_Up[0]; GISPixel_Up = GISPixel_Left_Up[1]
+			GISPixel_Right = GISPixel_Right_Down[0]; GISPixel_Down = GISPixel_Right_Down[1]
+			if not (GISPixel_Left < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[0] < GISPixel_Right)\
+				or not (GISPixel_Up < 0 < self.ScreenItem.SCREEN_DEFAULT_SIZE[1] < GISPixel_Down):
+				self.ScreenItem.screen.fill(self.ScreenItem.SCREEN_DEFAULT_COLOR)
+				# 一般在逻辑空间Panel内不能跳出Bbox范围去fill覆盖其他区域，即使有文本超出也不能全屏刷屏，但由于GISDB是空间独占的，故破例
+			self.ScreenItem.screenlock.release()
 		else:
 			print(self.name + " : " + KeyChar)
 
@@ -246,10 +285,15 @@ class GISDB:
 		print(self.name + " : " + str(button) + " " + str(PixelPos) + " " + str(LogicalPos))
 
 	def ClearListener(self):
-		fill_pos = self.ScreenItem.Log2Pix((self.LogicalLeft - self.Padding, self.LogicalUp + self.Padding))
-		fill_pos_end = self.ScreenItem.Log2Pix((self.LogicalRight + self.Padding, self.LogicalDown - self.Padding))
-		fill_scale = (fill_pos_end[0] - fill_pos[0] + 8, fill_pos_end[1] - fill_pos[1] + 8)
-		pygame.draw.rect(self.ScreenItem.screen, self.ScreenItem.SCREEN_DEFAULT_COLOR, pygame.Rect(fill_pos, fill_scale))
+		self.ScreenItem.screenlock.acquire()
+		self.Unsafe_Clear()
+		self.ScreenItem.screenlock.release()
+
+	def Unsafe_Clear(self):
+		fill_pos = self.ScreenItem.Log2Pix((self.LogicalLeft - self.LogicalPadding, self.LogicalUp + self.LogicalPadding))
+		fill_pos_end = self.ScreenItem.Log2Pix((self.LogicalRight + self.LogicalPadding, self.LogicalDown - self.LogicalPadding))
+		fill_scale = (fill_pos_end[0] - fill_pos[0] + self.PixelPadding, fill_pos_end[1] - fill_pos[1] + self.PixelPadding)
+		pygame.draw.rect(self.ScreenItem.screen, self.ScreenItem.SCREEN_DEFAULT_COLOR,pygame.Rect((fill_pos[0] - self.PixelPadding / 2, fill_pos[1] - self.PixelPadding / 2),fill_scale))
 
 	def run(self):
 		while True:
@@ -286,7 +330,8 @@ class GISDB:
 	#	 print(os.path.join(root, d))
 
 	def draw(self):
-		self.ClearListener()
+		self.ScreenItem.screenlock.acquire()
+		self.Unsafe_Clear()
 		self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalRight, self.LogicalUp, self.LogicalDown, self.default_rgb)
 		# 上句画出逻辑数据的合法矩形边界线条
 		self.DataLock.read_acquire()
@@ -321,11 +366,14 @@ class GISDB:
 
 							if self.PNGDic.__contains__(PNGPath): PNGImage = self.PNGDic.get(PNGPath)
 							else:
-								if not os.path.exists(PNGPath): PNGImage = pygame.image.load("layers.png")
-								else: PNGImage = pygame.image.load(PNGPath)
+								if not os.path.exists(PNGPath):
+									PNGImage = pygame.image.load("layers.png")
+								else:
+									PNGImage = pygame.image.load(PNGPath)
 								if len(self.PNGDic) > self.DefaultBufferImageNumber: self.PNGDic.clear()
 								self.PNGDic[PNGPath] = PNGImage
 							DrawCount += 1
+
 							if RelocScreenXY is None: self.ScreenItem.screen.blit(PNGImage, self.ScreenItem.Log2Pix(item.XY))
 							else: self.ScreenItem.screen.blit(pygame.transform.scale(PNGImage, RePNGSize), RelocScreenXY)
 							if AlignedPos != -1: continue
@@ -361,8 +409,9 @@ class GISDB:
 			os._exit(0)
 		self.DataLock.read_release()
 		#FlushScreen
-		if self.ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+		if self.ScreenItem.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 		else: pygame.display.update(pygame.Rect(0, 20, self.ScreenItem.SCREEN_DEFAULT_SIZE[0], self.ScreenItem.SCREEN_DEFAULT_SIZE[1] - 40))
+		self.ScreenItem.screenlock.release()
 
 	def test(self):
 		def ClickOnButton1(x, y, button):
@@ -401,15 +450,14 @@ class GISDB:
 			icon = pygame.transform.scale(pygame.image.load("plane.jpg"), self.ScreenItem.LogSize2Pixel((32, 32)))  # button2
 			self.ScreenItem.screen.blit(icon, self.ScreenItem.Log2Pix((self.LogicalLeft, self.LogicalDown + 32)))
 			self.ScreenItem.DrawLogicalRect(self.LogicalLeft, self.LogicalLeft + 32, self.LogicalDown + 32, self.LogicalDown)
-			if self.ScreenItem.screen.get_flags() & pygame.OPENGL: pygame.display.flip()
+			if self.ScreenItem.screen.get_flags() & pygame.DOUBLEBUF: pygame.display.flip()
 			else: pygame.display.update()
 
 
 if __name__ == "__main__":
-	DB = GISDB(HWACC=pygame.FULLSCREEN | pygame.HWSURFACE)
-	# DB = GISDB(HWACC=pygame.FULLSCREEN | pygame.HWSURFACE | pygame.OPENGL | pygame.DOUBLEBUF)
-	# DB.test()
+	DB = GISDB()
 	DB.start()
+	# DB.test(); exit(0)
 	import platform
 	opsys = str(platform.platform())
 	if opsys == "Windows-10-10.0.14393-SP0":
@@ -422,17 +470,19 @@ if __name__ == "__main__":
 		DB.InputAlignedMapDir("D:\\shanghai remote sensing image\\ShanghaiOSM_45km_MainCity_1mPerPixel_2kPics")
 	print(opsys)
 
+	import math
+	ScrWH = pygame.display.Info()
+	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.008 * ScrWH.current_w / ScrWH.current_h / math.cos(30 * 3.14 / 180) , 0.008)
 	DB.Insert("Point", (121, 31),"[PointRGB:0x123456][Title:Geo][WordRGB:0x880000][PointVisible:][PointSize:8][PNG:layers-2x.png][WordVisible:]")
 	DB.Insert("Line", [(121.2431, 31.4362), (121.5568, 31.7435)],"[LineRGB:0xAA00AA][Title:Geo][WordRGB:][LineVisible:][LineWidth:3]")
 	DB.Insert("Polygon", [(121.150, 31.43), (121.33, 31.20), (121.55, 31)],"[Title:World!][WordRGB:0x00cc00][PolygonVisible:][WordVisible:][PolygonRGB:0x00FF00]")
 
 	DB.ScreenItem.LOGICAL_DEFAULT_P0 = (121.47232076710037, 31.238546796792217)
-	DB.ScreenItem.LOGICAL_DEFAULT_SIZE = (0.012, 0.008)
 	DB.ScreenItem.GlobalFlushSpan = -1
 	scan_st = (121.2616, 31.13878)
 	scan_en = (121.66912, 31.385)
-	x_stride = 0.002
-	y_stride = 0.0015
+	x_stride = 0.002 * 2
+	y_stride = 0.0015 * 2
 	y_ptr = scan_st[1]
 	while y_ptr < scan_en[1]:
 		x_ptr = scan_st[0]
