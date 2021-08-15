@@ -72,7 +72,9 @@ class PyScreen(threading.Thread):
 			size[1] / self.LOGICAL_DEFAULT_SIZE[1] * self.SCREEN_DEFAULT_SIZE[1])
 
 	def LogicalMoveCenter(self, CenterPoint):
+		self.screenlock.acquire()
 		self.LOGICAL_DEFAULT_P0 = (CenterPoint[0] - self.LOGICAL_DEFAULT_SIZE[0]/2, CenterPoint[1] - self.LOGICAL_DEFAULT_SIZE[1]/2)
+		self.screenlock.release()
 
 	def run(self):
 		pygame.init()
